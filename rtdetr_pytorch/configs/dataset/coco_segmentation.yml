@@ -6,14 +6,14 @@ remap_mscoco_category: True
 train_dataloader: 
   type: DataLoader
   dataset: 
-    type: CocoDetection
+    type: CocoSeg
     img_folder: /home/multi-gpu/RT-DETR_regnet_dla_support/rtdetr_pytorch/dataset/train2017/
     ann_file: /home/multi-gpu/RT-DETR_regnet_dla_support/rtdetr_pytorch/dataset/annotations_trainval2017/annotations/instances_train2017.json
     transforms:
       type: Compose
       ops: ~
   shuffle: True
-  batch_size: 8
+  batch_size: 1
   num_workers: 0
   drop_last: True 
 
@@ -21,7 +21,7 @@ train_dataloader:
 val_dataloader:
   type: DataLoader
   dataset: 
-    type: CocoDetection
+    type: CocoSeg
     img_folder: /home/multi-gpu/RT-DETR_regnet_dla_support/rtdetr_pytorch/dataset/val2017/
     ann_file: /home/multi-gpu/RT-DETR_regnet_dla_support/rtdetr_pytorch/dataset/annotations_trainval2017/annotations/instances_val2017.json
     transforms:
@@ -29,6 +29,6 @@ val_dataloader:
       ops: ~ 
 
   shuffle: False
-  batch_size: 8
+  batch_size: 1
   num_workers: 0
   drop_last: False

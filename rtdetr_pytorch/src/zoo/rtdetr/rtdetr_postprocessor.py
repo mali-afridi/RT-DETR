@@ -30,7 +30,8 @@ class RTDETRPostProcessor(nn.Module):
     
     # def forward(self, outputs, orig_target_sizes):
     def forward(self, outputs, orig_target_sizes):
-
+        
+        import pdb; pdb.set_trace()
         logits, boxes = outputs['pred_logits'], outputs['pred_boxes']
         # orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)        
 
@@ -78,4 +79,4 @@ class RTDETRPostProcessor(nn.Module):
 
     @property
     def iou_types(self, ):
-        return ('bbox', )
+        return ('bbox', 'segm')

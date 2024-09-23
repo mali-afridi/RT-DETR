@@ -26,13 +26,17 @@ class RTDETR(nn.Module):
         self.multi_scale = multi_scale
         
     def forward(self, x, targets=None):
-        if self.multi_scale and self.training:
-            sz = np.random.choice(self.multi_scale)
-            x = F.interpolate(x, size=[sz, sz])
+        # if self.multi_scale and self.training:
+        #     sz = np.random.choice(self.multi_scale)
+        #     x = F.interpolate(x, size=[sz, sz])
             
         x = self.backbone(x)
-        x = self.encoder(x)        
-        x = self.decoder(x, targets)
+        x = self.encoder(x)    
+        # x = self.decoder(x, targets)
+        x = self.decoder(x)
+    
+        # import pdb; pdb.set_trace()    
+
 
         return x
     

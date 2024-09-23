@@ -8,16 +8,16 @@ train_dataloader:
       ops:
         - {type: RandomPhotometricDistort, p: 0.5}
         - {type: RandomZoomOut, fill: 0}
-        - {type: RandomIoUCrop, p: 0.8}
-        - {type: SanitizeBoundingBox, min_size: 1}
+        # - {type: RandomIoUCrop, p: 0.8}
+        # - {type: SanitizeBoundingBox, min_size: 1}
         - {type: RandomHorizontalFlip}
         - {type: Resize, size: [640, 640], }
         # - {type: Resize, size: 639, max_size: 640}
         # - {type: PadToSize, spatial_size: 640}
         - {type: ToImageTensor}
         - {type: ConvertDtype}
-        - {type: SanitizeBoundingBox, min_size: 1}
-        - {type: ConvertBox, out_fmt: 'cxcywh', normalize: True}
+        # - {type: SanitizeBoundingBox, min_size: 1}
+        # - {type: ConvertBox, out_fmt: 'cxcywh', normalize: True}
   shuffle: True
   batch_size: 1
   num_workers: 0

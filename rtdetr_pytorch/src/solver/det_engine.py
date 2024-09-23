@@ -56,6 +56,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         else:
             outputs = model(samples, targets)
+            import pdb; pdb.set_trace()
             loss_dict = criterion(outputs, targets)
             
             loss = sum(loss_dict.values())

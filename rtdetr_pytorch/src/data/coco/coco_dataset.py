@@ -12,13 +12,123 @@ import torchvision
 torchvision.disable_beta_transforms_warning()
 
 from torchvision import datapoints
-
+from PIL import Image, ImageDraw
 from pycocotools import mask as coco_mask
 
 from src.core import register
 
 __all__ = ['CocoDetection']
 
+@register
+class CocoSeg(torchvision.datasets.CocoDetection):
+    __inject__ = ['transforms']
+    __share__ = ['remap_mscoco_category']
+    
+    def __init__(self, img_folder, ann_file, transforms, return_masks, remap_mscoco_category=False):
+        super(CocoSeg, self).__init__(img_folder, ann_file)
+        self._transforms = transforms
+        self.prepare = ConvertCocoPolysToMask(True, remap_mscoco_category)
+        self.img_folder = img_folder
+        self.ann_file = ann_file
+        self.return_masks = True
+        self.remap_mscoco_category = remap_mscoco_category
+
+    def __getitem__(self, idx):
+        img, target = super(CocoSeg, self).__getitem__(idx)
+        image_id = self.ids[idx]
+        target = {'image_id': image_id, 'annotations': target}
+        
+        # draw = ImageDraw.Draw(img)
+        # segs = target['annotations'][0]['segmentation']
+        #         # Overlay each segmentation
+        width, height = img.size
+
+        # for seg in segs:
+        #     # seg is a list of x, y coordinates in flat format: [x1, y1, x2, y2, ..., xn, yn]
+        #     polygon = [(seg[i], seg[i+1]) for i in range(0, len(seg), 2)]
+        #     # Draw polygon on the image
+        #     draw.polygon(polygon, outline="red", width=3)
+
+        # # Save the image with the segmentation overlay
+        # img.save('output_image_with_segmentation.png')
+
+        # # Create a blank black image for the mask
+        # mask = Image.new('L', (width, height), 0)  # 'L' mode for grayscale, initialized to black (0)
+
+        # # Convert the mask to draw mode
+        # draw_mask = ImageDraw.Draw(mask)
+
+
+        # for seg in segs:
+        #     # seg is a list of x, y coordinates in flat format: [x1, y1, x2, y2, ..., xn, yn]
+        #     polygon = [(seg[i], seg[i+1]) for i in range(0, len(seg), 2)]
+        #     # Draw the polygon in white (255 is white in grayscale)
+        #     draw_mask.polygon(polygon, outline=255, fill=255)
+
+        # # Save the black-and-white mask
+        # mask.save('output_mask.png')
+        # # target = mask
+
+        img, target = self.prepare(img, target)
+
+
+        label_indx = target['labels']
+
+        eighty = torch.zeros((80,height,width))
+
+
+
+        for each_mask in range(len(target['labels'])):
+            # if(eighty[target['labels'][each_mask]].sum()):
+            #     # pass
+                
+            # else:
+                eighty[target['labels'][each_mask]] +=target['masks'][each_mask]
+
+        
+
+        # ['boxes', 'masks', 'labels']:
+        # if 'boxes' in target:
+        #     target['boxes'] = datapoints.BoundingBox(
+        #         target['boxes'], 
+        #         format=datapoints.BoundingBoxFormat.XYXY, 
+        #         spatial_size=img.size[::-1]) # h w
+        
+
+        target['masks'] = eighty
+        if 'masks' in target:
+            target['masks'] = datapoints.Mask(target['masks'])
+
+        if self._transforms is not None:
+            img, target = self._transforms(img, target)
+        target['masks'] = torch.clamp(target['masks'], min=0, max=1)
+        
+        return img, target
+
+    def extra_repr(self) -> str:
+        s = f' img_folder: {self.img_folder}\n ann_file: {self.ann_file}\n'
+        s += f' return_masks: {self.return_masks}\n'
+        if hasattr(self, '_transforms') and self._transforms is not None:
+            s += f' transforms:\n   {repr(self._transforms)}'
+
+        return s 
+
+
+def convert_coco_poly_to_mask(segmentations, height, width):
+    masks = []
+    for polygons in segmentations:
+        rles = coco_mask.frPyObjects(polygons, height, width)
+        mask = coco_mask.decode(rles)
+        if len(mask.shape) < 3:
+            mask = mask[..., None]
+        mask = torch.as_tensor(mask, dtype=torch.uint8)
+        mask = mask.any(dim=2)
+        masks.append(mask)
+    if masks:
+        masks = torch.stack(masks, dim=0)
+    else:
+        masks = torch.zeros((0, height, width), dtype=torch.uint8)
+    return masks
 
 @register
 class CocoDetection(torchvision.datasets.CocoDetection):
@@ -28,17 +138,19 @@ class CocoDetection(torchvision.datasets.CocoDetection):
     def __init__(self, img_folder, ann_file, transforms, return_masks, remap_mscoco_category=False):
         super(CocoDetection, self).__init__(img_folder, ann_file)
         self._transforms = transforms
-        self.prepare = ConvertCocoPolysToMask(return_masks, remap_mscoco_category)
+        self.prepare = ConvertCocoPolysToMask(True, remap_mscoco_category)
         self.img_folder = img_folder
         self.ann_file = ann_file
-        self.return_masks = return_masks
+        self.return_masks = True
         self.remap_mscoco_category = remap_mscoco_category
 
     def __getitem__(self, idx):
         img, target = super(CocoDetection, self).__getitem__(idx)
         image_id = self.ids[idx]
         target = {'image_id': image_id, 'annotations': target}
+
         img, target = self.prepare(img, target)
+        
 
         # ['boxes', 'masks', 'labels']:
         if 'boxes' in target:
@@ -46,13 +158,12 @@ class CocoDetection(torchvision.datasets.CocoDetection):
                 target['boxes'], 
                 format=datapoints.BoundingBoxFormat.XYXY, 
                 spatial_size=img.size[::-1]) # h w
-
+        
         if 'masks' in target:
             target['masks'] = datapoints.Mask(target['masks'])
 
         if self._transforms is not None:
             img, target = self._transforms(img, target)
-            
         return img, target
 
     def extra_repr(self) -> str:

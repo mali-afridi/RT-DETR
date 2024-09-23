@@ -1,0 +1,9 @@
+__include__: [
+  '../dataset/coco_segmentation.yml',
+  '../runtime.yml',
+  './include/dataloader2.yml',
+  './include/optimizer.yml',
+  './include/test_seg.yml',
+]
+
+output_dir: ./output/test
